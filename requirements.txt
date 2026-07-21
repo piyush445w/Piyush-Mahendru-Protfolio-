@@ -12,7 +12,4 @@ scikit-learn
 matplotlib
 seaborn
 plotly
-tensorflow
-torch
-xgboost
 gunicorn
