@@ -1,0 +1,15 @@
+<section id="skills" aria-label="Skills">
+  <div class="container">
+    <h2 class="section-title" data-reveal>Skills</h2>
+    {% for category, items in SKILLS.items() %}
+    <div class="skill-category" data-reveal data-reveal-delay="{{ loop.index * 0.1 }}">
+      <h3>{{ category }}</h3>
+      <ul class="skill-chips">
+        {% for skill in items %}
+        <li class="chip">{{ skill }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+</section>

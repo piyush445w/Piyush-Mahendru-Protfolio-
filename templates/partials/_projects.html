@@ -1,0 +1,61 @@
+<section id="projects" aria-label="Projects">
+  <div class="container">
+    <h2 class="section-title" data-reveal>Projects</h2>
+
+    <!-- Stacked Cards Container -->
+    <div class="stacked-cards-container" id="stackedCards">
+      {% for project in PROJECTS if project.status == "featured" %}
+      {% set idx = loop.index0 %}
+      <article class="stack-card" 
+               data-stack-card="{{ idx }}"
+               data-project-id="{{ idx }}"
+               tabindex="0"
+               role="button"
+               aria-expanded="false"
+               aria-label="{{ project.title }}">
+        <!-- Interactive background glow -->
+        <div class="stack-card-bg" aria-hidden="true"></div>
+
+        <div class="stack-card-content">
+          <div class="stack-card-header">
+            <span class="stack-card-number">{{ '%02d' % (idx + 1) }}</span>
+            <h3 class="stack-card-title">{{ project.title }}</h3>
+          </div>
+
+          <p class="stack-card-summary">{{ project.summary }}</p>
+
+          <div class="stack-card-tags">
+            {% for tag in project.tech_stack %}
+            <span class="chip">{{ tag }}</span>
+            {% endfor %}
+          </div>
+
+          {% if project.metrics %}
+          <div class="stack-card-metrics">
+            {% for metric in project.metrics %}
+            <span class="metric-badge">{{ metric.label }}: {{ metric.value }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <button class="stack-card-expand" data-expand-card="{{ idx }}">
+            View Details →
+          </button>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Card Morphing Modal -->
+  <div class="card-modal-overlay" id="cardModal" role="dialog" aria-modal="true" aria-label="Project details" aria-hidden="true">
+    <div class="card-modal-content">
+      <button class="card-modal-close" id="modalClose" aria-label="Close project details">&times;</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Hidden JSON data -->
+  <script id="projects-data-json" type="application/json">{{ PROJECTS_JSON | tojson | safe }}</script>
+</section>
+

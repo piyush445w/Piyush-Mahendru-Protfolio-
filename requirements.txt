@@ -1,0 +1,18 @@
+Flask
+python-dotenv
+
+# M5 — Contact form
+Flask-Mail
+Flask-WTF
+Flask-Limiter
+
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+plotly
+tensorflow
+torch
+xgboost
+gunicorn

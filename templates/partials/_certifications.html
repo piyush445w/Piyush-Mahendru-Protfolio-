@@ -1,0 +1,16 @@
+<section id="certifications" aria-label="Certifications">
+  <div class="container">
+    <h2 class="section-title" data-reveal>Certifications</h2>
+    <div class="cert-grid">
+      {% for cert in CERTIFICATIONS %}
+      <article class="cert-card" data-reveal data-reveal-delay="{{ loop.index * 0.1 }}">
+        <h3>{{ cert.title }}</h3>
+        <p class="cert-issuer">{{ cert.issuer }}</p>
+        {% if cert.date %}
+        <span class="cert-date">{{ cert.date }}</span>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>

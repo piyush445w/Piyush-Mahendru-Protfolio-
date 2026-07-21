@@ -1,0 +1,108 @@
+/* ==========================================================================
+   Premium Portfolio — Animation Classes
+   GSAP-powered animations with CSS fallbacks and reduced-motion support
+   ========================================================================== */
+
+/* --- GSAP Reveal Classes ------------------------------------------------- */
+/* 
+ * CRITICAL: Do NOT set opacity:0 on [data-reveal] in CSS! That would make
+ * hero content invisible before GSAP loads, causing a flash of hidden content.
+ * GSAP sets initial states programmatically in main.js after libraries load.
+ */
+[data-reveal] {
+  /* Initial state managed by GSAP via fromTo() */
+}
+
+[data-reveal].revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Stack Card Animation Base --------------------------------------------- */
+/* Stack cards get their initial state from GSAP gsap.set(), not CSS */
+
+/* --- Card Modal Morphing --------------------------------------------------- */
+.card-modal-origin {
+  position: fixed;
+  z-index: 1999;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Hero Entrance Classes ------------------------------------------------- */
+.hero-char {
+  display: inline-block;
+}
+
+.hero-line {
+  overflow: hidden;
+}
+
+/* --- Scroll Progress ------------------------------------------------------- */
+.scroll-progress-bar {
+  transform-origin: left center;
+}
+
+/* --- Impact Counter Animation ---------------------------------------------- */
+.impact-value.animated {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   Reduced Motion Overrides
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-reveal].revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .stack-card {
+    opacity: 1;
+    transform: none;
+  }
+
+  .hero-char {
+    opacity: 1;
+    transform: none;
+  }
+
+  .impact-value {
+    opacity: 1;
+    transform: none;
+  }
+
+  .card-modal-origin {
+    display: none;
+  }
+}
+
+/* JS reduced-motion class override */
+html.reduced-motion [data-reveal],
+html.reduced-motion [data-reveal].revealed {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+html.reduced-motion .stack-card {
+  opacity: 1;
+  transform: none;
+}
+
+html.reduced-motion .hero-char {
+  opacity: 1;
+  transform: none;
+}
+
+html.reduced-motion .impact-value {
+  opacity: 1;
+  transform: none;
+}

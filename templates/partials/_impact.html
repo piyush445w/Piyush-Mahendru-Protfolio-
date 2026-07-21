@@ -1,0 +1,13 @@
+<section id="impact" class="section-impact" aria-label="Impact">
+  <div class="container">
+    <h2 class="section-title" data-reveal>Impact</h2>
+    <div class="impact-grid">
+      {% for item in IMPACT %}
+      <div class="impact-card" data-reveal data-reveal-delay="{{ loop.index * 0.1 }}">
+        <span class="impact-value" data-target="{{ item.value }}" data-suffix="{{ item.suffix }}">0{{ item.suffix }}</span>
+        <span class="impact-label">{{ item.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,32 @@
+<section id="hero" class="hero" aria-label="Hero">
+  <!-- Animated Gradient Background -->
+  <div class="hero-bg-gradient" aria-hidden="true"></div>
+
+  <div class="container" style="position:relative;z-index:3;">
+    <!-- Badge -->
+    <div class="hero-badge" data-reveal>
+      <span class="mono">✦</span>
+      <span>Open to opportunities</span>
+    </div>
+
+    <!-- Name with animated chars -->
+    <h1 class="hero-name" id="heroName" data-reveal>
+      Hi, I'm <span class="accent">{{ PROFILE.name.split()[0] }}</span>
+      <span class="accent">{{ PROFILE.name.split()[1] }}</span>
+    </h1>
+
+    <!-- Title -->
+    <p class="hero-title" data-reveal data-reveal-delay="0.15">{{ PROFILE.title }}</p>
+
+    <!-- Tagline -->
+    <p class="hero-tagline" data-reveal data-reveal-delay="0.30">{{ PROFILE.tagline }}</p>
+
+    <!-- CTAs -->
+    <div class="hero-ctas" data-reveal data-reveal-delay="0.45">
+      <a href="#projects" class="btn btn-primary magnetic-btn" data-strength="0.4">View Projects</a>
+      <a href="#contact" class="btn btn-secondary magnetic-btn" data-strength="0.3">Contact</a>
+      <a href="{{ PROFILE.resume_pdf }}" class="btn btn-secondary magnetic-btn" data-strength="0.3" download>Download Résumé</a>
+    </div>
+  </div>
+</section>
+

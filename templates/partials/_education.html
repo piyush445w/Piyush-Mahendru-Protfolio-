@@ -1,0 +1,17 @@
+<section id="education" aria-label="Education">
+  <div class="container">
+    <h2 class="section-title" data-reveal>Education</h2>
+    <div class="timeline">
+      {% for entry in EDUCATION %}
+      <div class="timeline-entry" data-reveal data-reveal-delay="{{ loop.index * 0.15 }}">
+        <div class="timeline-marker"></div>
+        <div class="timeline-content">
+          <h3>{{ entry.institution }}</h3>
+          <p>{{ entry.degree }}</p>
+          <span class="timeline-period">{{ entry.period }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,14 @@
+<section id="about" class="section-about" aria-label="About">
+  <div class="container">
+    <h2 class="section-title" data-reveal>About</h2>
+    <div class="about-content">
+      <p data-reveal data-reveal-delay="0.15">{{ ABOUT.summary }}</p>
+      <ul class="about-facts" data-reveal data-reveal-delay="0.30">
+        <li><strong>Location:</strong> {{ ABOUT.location }}</li>
+        <li><strong>Availability:</strong> {{ ABOUT.availability }}</li>
+        <li><strong>Focus:</strong> {{ ABOUT.focus_areas | join(', ') }}</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
