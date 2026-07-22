@@ -64,18 +64,18 @@ def contact_submit():
             f'  Message: {cleaned["message"]}'
         )
         return jsonify({
-            'status': 'success',
-            'message': 'Message received! (No SMTP configured — logged to console.)'
-        }), 200
+            'status': 'error',
+            'errors': {'_form': 'Mail is not configured on the server. Set MAIL_SERVER in the .env file, or email me directly.'}
+        }), 500
 
     try:
         mail = current_app.extensions.get('mail')
         if mail is None:
             current_app.logger.warning('Mail extension not initialized.')
             return jsonify({
-                'status': 'success',
-                'message': 'Message received! (Mail extension not available.)'
-            }), 200
+                'status': 'error',
+                'errors': {'_form': 'Mail extension not available.'}
+            }), 500
 
         msg = Message(
             subject=f'Portfolio Contact: {escape(cleaned["name"])}',

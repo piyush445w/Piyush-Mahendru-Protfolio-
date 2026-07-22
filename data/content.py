@@ -74,7 +74,7 @@ PROFILE = Profile(
     phone="+91-7986086946",
     email="piyushmahendru534@gmail.com",
     linkedin="https://linkedin.com/in/piyush-mahendru-342758271",
-    github="https://github.com/piyushmahendru",
+    github="https://github.com/piyush445w",
     resume_pdf="/static/files/Piyush_Mahendru_Resume.pdf",
 )
 
@@ -84,6 +84,31 @@ SKILLS: Dict[str, List[str]] = {
     "Data Visualization": ["Power BI", "Tableau", "Matplotlib", "Seaborn", "Plotly", "Dash"],
     "Databases": ["MySQL"],
     "Tools & Platforms": ["Git", "GitHub", "Jupyter Notebook", "VS Code"],
+}
+
+SKILL_DEFINITIONS: Dict[str, str] = {
+    "Python": "High-level programming language widely used for ML, data analysis, and web development.",
+    "C++": "General-purpose language offering high performance for system-level and competitive programming.",
+    "SQL": "Domain-specific language for managing and querying relational databases.",
+    "R": "Language and environment for statistical computing and data visualization.",
+    "Pandas": "Data manipulation and analysis library providing DataFrame structures for Python.",
+    "NumPy": "Fundamental package for numerical computing with support for arrays and mathematical functions.",
+    "Scikit-learn": "Machine learning library featuring classification, regression, and clustering algorithms.",
+    "TensorFlow": "End-to-end open-source platform for building and deploying ML models at scale.",
+    "PyTorch": "Deep learning framework with dynamic computation graphs, popular in research and production.",
+    "XGBoost": "Optimized gradient boosting library for high-performance ML on structured data.",
+    "Flask": "Micro web framework for Python, ideal for building APIs and web apps.",
+    "Power BI": "Microsoft business analytics service for interactive visualizations and dashboards.",
+    "Tableau": "Data visualization platform for creating interactive, shareable dashboards.",
+    "Matplotlib": "Plotting library for creating static, animated, and interactive visualizations in Python.",
+    "Seaborn": "Statistical data visualization library based on Matplotlib with a high-level interface.",
+    "Plotly": "Graphing library for creating interactive, publication-quality graphs and dashboards.",
+    "Dash": "Python framework for building analytical web applications on top of Plotly.",
+    "MySQL": "Open-source relational database management system for structured data storage.",
+    "Git": "Distributed version control system for tracking changes in source code.",
+    "GitHub": "Code hosting platform for collaboration, version control, and CI/CD workflows.",
+    "Jupyter Notebook": "Interactive computing environment for running code, visualizations, and narratives.",
+    "VS Code": "Source-code editor with extensions for debugging, ML, and seamless development workflows.",
 }
 
 PROJECTS: List[Project] = [

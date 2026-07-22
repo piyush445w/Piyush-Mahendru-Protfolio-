@@ -4,12 +4,27 @@
     {% for category, items in SKILLS.items() %}
     <div class="skill-category" data-reveal data-reveal-delay="{{ loop.index * 0.1 }}">
       <h3>{{ category }}</h3>
-      <ul class="skill-chips">
+      <div class="skill-cards">
         {% for skill in items %}
-        <li class="chip">{{ skill }}</li>
+        <button class="skill-card" data-skill="{{ skill }}" aria-label="View details for {{ skill }}">
+          <span class="skill-card-name">{{ skill }}</span>
+          <span class="skill-card-arrow" aria-hidden="true">→</span>
+        </button>
         {% endfor %}
-      </ul>
+      </div>
     </div>
     {% endfor %}
   </div>
+
+  <!-- Skill Detail Modal -->
+  <div class="skill-modal-overlay" id="skillModal" role="dialog" aria-modal="true" aria-label="Skill details" aria-hidden="true">
+    <div class="skill-modal-content">
+      <button class="skill-modal-close" id="skillModalClose" aria-label="Close skill details">&times;</button>
+      <div id="skillModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Hidden skill data -->
+  <script id="skill-definitions-json" type="application/json">{{ SKILL_DEFINITIONS | tojson | safe }}</script>
+  <script id="skill-project-map-json" type="application/json">{{ SKILL_PROJECT_MAP | tojson | safe }}</script>
 </section>

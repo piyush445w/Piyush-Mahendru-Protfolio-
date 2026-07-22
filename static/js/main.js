@@ -1,623 +1,486 @@
-/**
- * Premium Portfolio — Main JavaScript (v2 - Bug Fixes)
- * ============================================================================
- * Features:
- *   1. Lenis Smooth Scroll (connected to GSAP ticker)
- *   2. Custom Cursor (dot + ring)
- *   3. Particle System (canvas)
- *   4. Spotlight Effect
- *   5. Hero Entrance — ONLY targets hero section elements
- *   6. Magnetic Buttons
- *   7. Scroll Progress Bar
- *   8. GSAP ScrollTrigger Stacked Cards (CORE)
- *   9. Card Morphing Modal (CORE)
- *  10. Scroll Reveals (GSAP) — for non-hero sections
- *  11. Metric Counters (GSAP)
- *  12. Reduced Motion Check
- *  13. Scroll Spy
- *  14. Smooth Nav Scroll
- *  15. Navbar Scroll Effect
- * ============================================================================
- */
 (function () {
   'use strict';
 
-  /* ── 0. Reduced Motion Check ─────────────────────────────────────────── */
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (prefersReducedMotion) {
-    document.documentElement.classList.add('reduced-motion');
-    document.querySelectorAll('.stack-card').forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; });
-    initSmoothScroll();
-    return;
+  /* ==========================================================================
+     Utility helpers
+     ========================================================================== */
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ==========================================================================
+     1. Theme Toggle
+     ========================================================================== */
+  var themeToggle = document.getElementById('themeToggle');
+  var html = document.documentElement;
+
+  function getSystemTheme() {
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   }
 
-  let lenis;
+  function applyTheme(theme) {
+    if (theme === 'light') {
+      html.setAttribute('data-theme', 'light');
+      if (themeToggle) {
+        themeToggle.setAttribute('aria-label', 'Switch to dark mode');
+      }
+    } else {
+      html.removeAttribute('data-theme');
+      if (themeToggle) {
+        themeToggle.setAttribute('aria-label', 'Switch to light mode');
+      }
+    }
+  }
 
-  /* ── 1. Lenis Smooth Scroll ─────────────────────────────────────────── */
-  function initLenis() {
+  function toggleTheme() {
+    var current = html.getAttribute('data-theme');
+    var next = current === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  }
+
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+  }
+
+  var stored = (function () {
+    try { return localStorage.getItem('theme'); } catch (e) { return null; }
+  })();
+  applyTheme(stored || getSystemTheme());
+
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function (e) {
+    if (!localStorage.getItem('theme')) {
+      applyTheme(e.matches ? 'light' : 'dark');
+    }
+  });
+
+  /* ==========================================================================
+     2. Lenis Smooth Scroll
+     ========================================================================== */
+  var lenis = null;
+  if (!reducedMotion && typeof Lenis !== 'undefined') {
     lenis = new Lenis({
-      lerp: 0.08,
-      wheelMultiplier: 1,
-      smoothWheel: true,
+      duration: 1.2,
+      easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
       orientation: 'vertical',
-      infinite: false,
+      smoothWheel: true,
     });
 
-    lenis.on('scroll', ScrollTrigger.update);
-
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
-    });
-    gsap.ticker.lagSmoothing(0);
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
   }
 
-  /* ── 2. Custom Cursor ──────────────────────────────────────────────────── */
-  function initCustomCursor() {
-    const cursor = document.getElementById('customCursor');
-    if (!cursor) return;
-    const dot = cursor.querySelector('.cursor-dot');
-    const ring = cursor.querySelector('.cursor-ring');
-    if (!dot || !ring) return;
-    
-    let mouseX = 0, mouseY = 0;
-    let ringX = 0, ringY = 0;
+  /* ==========================================================================
+     3. GSAP + ScrollTrigger
+     ========================================================================== */
+  if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
 
-    document.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      dot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
-    });
+    if (lenis) {
+      lenis.on('scroll', ScrollTrigger.update);
+      gsap.ticker.add(function (time) { lenis.raf(time * 1000); });
+      gsap.ticker.lagSmoothing(0);
+    }
 
-    gsap.ticker.add(() => {
-      ringX += (mouseX - ringX) * 0.15;
-      ringY += (mouseY - ringY) * 0.15;
-      ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
-    });
+    /* Reveal animations */
+    if (!reducedMotion) {
+      var reveals = document.querySelectorAll('[data-reveal]');
+      reveals.forEach(function (el) {
+        var delay = parseFloat(el.getAttribute('data-reveal-delay')) || 0;
+        gsap.fromTo(el,
+          { y: 40, opacity: 0 },
+          {
+            y: 0, opacity: 1, duration: 0.8, ease: 'power3.out', delay: delay,
+            scrollTrigger: {
+              trigger: el,
+              start: 'top 88%',
+              toggleActions: 'play none none none',
+            },
+            onComplete: function () { el.classList.add('revealed'); },
+          }
+        );
+      });
+    } else {
+      document.querySelectorAll('[data-reveal]').forEach(function (el) {
+        el.classList.add('revealed');
+      });
+    }
 
-    const hoverTargets = 'a, button, .stack-card, .chip, .impact-card, .cert-card, .magnetic-btn';
-    document.addEventListener('mouseover', (e) => {
-      const target = e.target.closest(hoverTargets);
-      if (target) ring.classList.add('hover');
-    });
-    document.addEventListener('mouseout', (e) => {
-      const target = e.target.closest(hoverTargets);
-      if (target) ring.classList.remove('hover');
+    /* Stack cards */
+    if (!reducedMotion) {
+      var stackCards = document.querySelectorAll('.stack-card');
+      stackCards.forEach(function (card, i) {
+        gsap.fromTo(card,
+          { y: 120, opacity: 0, scale: 0.96 },
+          {
+            y: 0, opacity: 1, scale: 1, duration: 0.9, ease: 'power3.out',
+            scrollTrigger: {
+              trigger: card,
+              start: 'top 78%',
+              toggleActions: 'play none none none',
+            },
+          }
+        );
+      });
+    }
+
+    /* Impact counters */
+    var impactValues = document.querySelectorAll('.impact-value[data-target]');
+    impactValues.forEach(function (el) {
+      var target = parseFloat(el.getAttribute('data-target'));
+      var suffix = el.getAttribute('data-suffix') || '';
+      if (isNaN(target) || reducedMotion) {
+        el.textContent = target + suffix;
+        el.classList.add('animated');
+        return;
+      }
+      var obj = { val: 0 };
+      gsap.to(obj, {
+        val: target,
+        duration: 2,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: el,
+          start: 'top 88%',
+          toggleActions: 'play none none none',
+        },
+        onUpdate: function () {
+          el.textContent = Math.round(obj.val) + suffix;
+        },
+        onComplete: function () { el.classList.add('animated'); },
+      });
     });
   }
 
-  /* ── 3. Particle System ───────────────────────────────────────────────── */
-  function initParticles() {
-    const canvas = document.getElementById('particleCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    let animId;
+  /* ==========================================================================
+     4. Scroll Progress Bar
+     ========================================================================== */
+  var progressBar = document.getElementById('scroll-progress');
 
-    function resize() {
+  function updateProgress() {
+    if (!progressBar) return;
+    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    var percent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = percent + '%';
+  }
+
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  /* ==========================================================================
+     5. Navbar Scroll Effect
+     ========================================================================== */
+  var navbar = document.querySelector('.navbar');
+
+  function updateNavbar() {
+    if (!navbar) return;
+    if (window.pageYOffset > 40) {
+      navbar.classList.add('scrolled');
+    } else {
+      navbar.classList.remove('scrolled');
+    }
+  }
+
+  window.addEventListener('scroll', updateNavbar, { passive: true });
+  updateNavbar();
+
+  /* ==========================================================================
+     6. Mobile Nav Toggle
+     ========================================================================== */
+  var navToggle = document.getElementById('navToggle');
+  var navLinks = document.getElementById('navLinks');
+
+  if (navToggle && navLinks) {
+    navToggle.addEventListener('click', function () {
+      var open = navLinks.style.display === 'flex';
+      navLinks.style.display = open ? '' : 'flex';
+    });
+
+    navLinks.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        navLinks.style.display = '';
+      });
+    });
+  }
+
+  /* ==========================================================================
+     7. Custom Cursor
+     ========================================================================== */
+  var cursor = document.getElementById('customCursor');
+  var cursorDot = cursor ? cursor.querySelector('.cursor-dot') : null;
+  var cursorRing = cursor ? cursor.querySelector('.cursor-ring') : null;
+
+  if (cursor && cursorDot && cursorRing && !reducedMotion && window.matchMedia('(hover: hover)').matches) {
+    var mx = 0, my = 0;
+    document.addEventListener('mousemove', function (e) {
+      mx = e.clientX;
+      my = e.clientY;
+      cursorDot.style.transform = 'translate(' + (mx - 4) + 'px, ' + (my - 4) + 'px)';
+    });
+
+    function animateRing() {
+      var ringX = parseFloat(cursorRing.style.left || -20);
+      var ringY = parseFloat(cursorRing.style.top || -20);
+      ringX += (mx - (ringX + 20)) * 0.15;
+      ringY += (my - (ringY + 20)) * 0.15;
+      cursorRing.style.left = ringX + 'px';
+      cursorRing.style.top = ringY + 'px';
+      cursorRing.style.transform = 'none';
+      requestAnimationFrame(animateRing);
+    }
+    requestAnimationFrame(animateRing);
+
+    var hoverTargets = document.querySelectorAll('a, button, .stack-card, .skill-card, input, textarea');
+    hoverTargets.forEach(function (el) {
+      el.addEventListener('mouseenter', function () { cursorRing.classList.add('hover'); });
+      el.addEventListener('mouseleave', function () { cursorRing.classList.remove('hover'); });
+    });
+  }
+
+  /* ==========================================================================
+     8. Spotlight Effect
+     ========================================================================== */
+  var spotlight = document.getElementById('spotlightOverlay');
+
+  if (spotlight && !reducedMotion) {
+    document.addEventListener('mousemove', function (e) {
+      spotlight.style.background = 'radial-gradient(600px circle at ' + e.clientX + 'px ' + e.clientY + 'px, rgba(59, 130, 246, 0.06), transparent 60%)';
+    });
+  }
+
+  /* ==========================================================================
+     9. Particle Canvas
+     ========================================================================== */
+  var canvas = document.getElementById('particleCanvas');
+  if (canvas && !reducedMotion) {
+    var ctx = canvas.getContext('2d');
+    var particles = [];
+    var PARTICLE_COUNT = 60;
+
+    function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-    function createParticles(count) {
-      const num = count || 20;
-      particles = [];
-      for (let i = 0; i < num; i++) {
-        particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: (Math.random() - 0.5) * 0.4,
-          size: Math.random() * 3 + 1,
-          opacity: Math.random() * 0.4 + 0.1,
-          pulse: Math.random() * Math.PI * 2,
-        });
-      }
+    function Particle() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * 0.3;
+      this.vy = (Math.random() - 0.5) * 0.3;
+      this.size = Math.random() * 1.5 + 0.5;
+      this.opacity = Math.random() * 0.3 + 0.1;
     }
 
-    function draw() {
+    for (var i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push(new Particle());
+    }
+
+    function drawParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      particles.forEach((p, i) => {
+      particles.forEach(function (p, idx) {
         p.x += p.vx;
         p.y += p.vy;
-        p.pulse += 0.02;
-
         if (p.x < 0) p.x = canvas.width;
         if (p.x > canvas.width) p.x = 0;
         if (p.y < 0) p.y = canvas.height;
         if (p.y > canvas.height) p.y = 0;
 
-        const pulseOpacity = p.opacity * (0.6 + 0.4 * Math.sin(p.pulse));
-        
+        var isBlue = idx % 2 === 0;
+        var color = isBlue ? '59, 130, 246' : '255, 77, 48';
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 77, 48, ${pulseOpacity})`;
+        ctx.fillStyle = 'rgba(' + color + ', ' + p.opacity + ')';
         ctx.fill();
+      });
 
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[j].x - p.x;
-          const dy = particles[j].y - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 150) {
+      particles.forEach(function (p1, idx) {
+        for (var j = idx + 1; j < particles.length; j++) {
+          var p2 = particles[j];
+          var dx = p1.x - p2.x;
+          var dy = p1.y - p2.y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120) {
+            var isBlue1 = idx % 2 === 0;
+            var isBlue2 = j % 2 === 0;
+            var lineColor = (isBlue1 && isBlue2) ? '59, 130, 246' : '255, 77, 48';
+            var alpha = 0.06 * (1 - dist / 120);
             ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(255, 77, 48, ${0.06 * (1 - dist / 150)})`;
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = 'rgba(' + lineColor + ', ' + alpha + ')';
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
         }
       });
 
-      animId = requestAnimationFrame(draw);
+      requestAnimationFrame(drawParticles);
     }
-
-    resize();
-    createParticles();
-    draw();
-
-    window.addEventListener('resize', () => {
-      resize();
-      createParticles();
-    });
+    requestAnimationFrame(drawParticles);
   }
 
-  /* ── 4. Spotlight Effect ──────────────────────────────────────────────── */
-  function initSpotlight() {
-    const spotlight = document.getElementById('spotlightOverlay');
-    if (!spotlight) return;
-    let mouseX = 0, mouseY = 0;
-    let smoothX = 0, smoothY = 0;
+  /* ==========================================================================
+     10. Stack Cards & Card Modal
+     ========================================================================== */
+  var cardModal = document.getElementById('cardModal');
+  var modalClose = document.getElementById('modalClose');
+  var modalBody = document.getElementById('modalBody');
+  var projectsDataEl = document.getElementById('projects-data-json');
+  var PROJECTS_DATA = [];
+  try { PROJECTS_DATA = JSON.parse(projectsDataEl.textContent); } catch (e) {}
 
-    document.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    });
-
-    gsap.ticker.add(() => {
-      smoothX += (mouseX - smoothX) * 0.06;
-      smoothY += (mouseY - smoothY) * 0.06;
-      spotlight.style.background = `
-        radial-gradient(600px circle at ${smoothX}px ${smoothY}px, 
-        rgba(255, 77, 48, 0.06) 0%, 
-        transparent 60%)
-      `;
-    });
+  function openCardModal(projectId) {
+    if (!cardModal || !modalBody) return;
+    var project = PROJECTS_DATA.find(function (p) { return p.id === projectId; });
+    if (!project) return;
+    modalBody.innerHTML = '<h2>' + project.title + '</h2>' +
+      '<p>' + project.description + '</p>' +
+      '<p><strong>Tech Stack:</strong> ' + project.tech_stack.join(', ') + '</p>' +
+      (project.metrics ? '<p><strong>Metrics:</strong> ' + project.metrics.map(function (m) { return m.label + ': ' + m.value; }).join(', ') + '</p>' : '') +
+      (project.link ? '<a href="' + project.link + '" target="_blank" rel="noopener" class="btn btn-primary">View Project</a>' : '');
+    cardModal.classList.add('active');
+    cardModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
   }
 
-  /* ── 5. Hero Entrance Animation (FIXED: only hero section) ──────────── */
-  function initHeroAnimation() {
-    const hero = document.getElementById('hero');
-    if (!hero) return;
-    
-    // Only animate elements INSIDE the hero section
-    const heroReveals = hero.querySelectorAll('[data-reveal]');
-    if (!heroReveals.length) return;
-
-    gsap.fromTo(heroReveals, 
-      { y: 40, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 1,
-        stagger: 0.15,
-        ease: 'power3.out',
-        delay: 0.2,
-      }
-    );
+  function closeCardModal() {
+    if (!cardModal) return;
+    cardModal.classList.remove('active');
+    cardModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
   }
 
-  /* ── 6. Magnetic Buttons ──────────────────────────────────────────────── */
-  function initMagneticButtons() {
-    const buttons = document.querySelectorAll('.magnetic-btn');
-    buttons.forEach(btn => {
-      btn.addEventListener('mousemove', (e) => {
-        const rect = btn.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-        const strength = parseFloat(btn.dataset.strength) || 0.3;
-        gsap.to(btn, {
-          x: x * strength,
-          y: y * strength,
-          duration: 0.4,
-          ease: 'power2.out',
-        });
-      });
-      btn.addEventListener('mouseleave', () => {
-        gsap.to(btn, {
-          x: 0, y: 0,
-          duration: 0.6,
-          ease: 'elastic.out(1, 0.4)',
-        });
-      });
-    });
+  if (modalClose) {
+    modalClose.addEventListener('click', closeCardModal);
   }
-
-  /* ── 7. Scroll Progress Bar ──────────────────────────────────────────── */
-  function initScrollProgress() {
-    const bar = document.getElementById('scroll-progress');
-    if (!bar) return;
-    gsap.to(bar, {
-      width: '100%',
-      ease: 'none',
-      scrollTrigger: {
-        trigger: document.body,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 0.3,
-      },
-    });
+  if (cardModal) {
+    cardModal.addEventListener('click', function (e) { if (e.target === cardModal) closeCardModal(); });
   }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeCardModal(); closeSkillModal(); } });
 
-  /* ── 8. GSAP ScrollTrigger Stacked Cards (CORE - FIXED) ─────────────── */
-  function initStackedCards() {
-    const cards = document.querySelectorAll('.stack-card');
-    if (!cards.length) return;
-
-    const container = document.getElementById('stackedCards');
-    
-    // Make all cards visible initially (no CSS opacity hiding)
-    gsap.set(cards, { opacity: 1, visibility: 'visible' });
-
-    cards.forEach((card, i) => {
-      // Scale down all cards except the first one
-      if (i === 0) {
-        gsap.set(card, { scale: 1, y: 0 });
-      } else {
-        gsap.set(card, { scale: 0.92, y: 40 });
-      }
-
-      // For card 0, it's always visible. For others, trigger when they approach viewport
-      if (i > 0) {
-        ScrollTrigger.create({
-          trigger: card,
-          start: 'top 80%',
-          onEnter: () => {
-            gsap.to(card, {
-              scale: 1,
-              y: 0,
-              duration: 0.8,
-              ease: 'power3.out',
-            });
-          },
-          onLeaveBack: () => {
-            gsap.to(card, {
-              scale: 0.92,
-              y: 40,
-              duration: 0.6,
-              ease: 'power2.inOut',
-            });
-          },
-        });
-      }
-
-      // Mouse parallax glow on cards
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width - 0.5;
-        const y = (e.clientY - rect.top) / rect.height - 0.5;
-        const bg = card.querySelector('.stack-card-bg');
-        if (bg) {
-          bg.style.setProperty('--mouse-x', `${x * 100 + 50}%`);
-          bg.style.setProperty('--mouse-y', `${y * 100 + 50}%`);
-        }
-      });
+  var stackExpandButtons = document.querySelectorAll('.stack-card-expand');
+  stackExpandButtons.forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var idx = btn.getAttribute('data-expand-card');
+      openCardModal(idx);
     });
+  });
 
-    // Add scroll room
-    if (container) {
-      container.style.paddingBottom = window.innerHeight * 0.8 + 'px';
-    }
-  }
-
-  /* ── 9. Card Morphing Modal (CORE) ───────────────────────────────────── */
-  function initCardModal() {
-    const overlay = document.getElementById('cardModal');
-    const closeBtn = document.getElementById('modalClose');
-    const modalBody = document.getElementById('modalBody');
-    const dataScript = document.getElementById('projects-data-json');
-    let projectsData = [];
-
-    if (dataScript) {
-      try { projectsData = JSON.parse(dataScript.textContent); } catch(e) {
-        console.warn('Failed to parse projects data', e);
-      }
-    }
-
-    let activeCard = null;
-
-    function openModal(index) {
-      const project = projectsData[index];
-      if (!project) return;
-
-      const card = document.querySelector(`[data-stack-card="${index}"]`);
-      if (!card) return;
-
-      activeCard = card;
-
-      // Build tech tags
-      let techHtml = '';
-      if (project.tech_stack && project.tech_stack.length) {
-        techHtml = project.tech_stack.map(t => `<span class="chip">${escapeHtml(t)}</span>`).join('');
-        techHtml = `<div class="card-modal-tags">${techHtml}</div>`;
-      }
-
-      // Build metrics
-      let metricsHtml = '';
-      if (project.metrics && project.metrics.length) {
-        metricsHtml = project.metrics.map(m => 
-          `<span class="metric-badge">${escapeHtml(m.label)}: ${escapeHtml(m.value)}</span>`
-        ).join('');
-        metricsHtml = `<div class="stack-card-metrics" style="margin-bottom:24px">${metricsHtml}</div>`;
-      }
-
-      modalBody.innerHTML = `
-        <h2 class="card-modal-title">${escapeHtml(project.title)}</h2>
-        <p class="card-modal-description">${escapeHtml(project.summary)}</p>
-        ${metricsHtml}
-        <div class="card-modal-details">
-          <div class="card-modal-section">
-            <h4>Tech Stack</h4>
-            ${techHtml}
-          </div>
-      `;
-
-      overlay.classList.add('active');
-      overlay.setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden';
-      card.setAttribute('aria-expanded', 'true');
-
-      setTimeout(() => closeBtn.focus(), 100);
-    }
-
-    function closeModal() {
-      overlay.classList.remove('active');
-      overlay.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-      if (activeCard) {
-        activeCard.setAttribute('aria-expanded', 'false');
-        activeCard.focus();
-        activeCard = null;
-      }
-    }
-
-    // Click handlers
-    document.addEventListener('click', (e) => {
-      const trigger = e.target.closest('[data-expand-card]');
-      if (trigger) {
-        e.preventDefault();
-        const idx = parseInt(trigger.getAttribute('data-expand-card'), 10);
-        openModal(idx);
-        return;
-      }
-      const card = e.target.closest('[data-stack-card]');
-      if (card && !e.target.closest('[data-expand-card]')) {
-        const idx = parseInt(card.getAttribute('data-stack-card'), 10);
-        openModal(idx);
-      }
+  var stackCards = document.querySelectorAll('.stack-card');
+  stackCards.forEach(function (card) {
+    card.addEventListener('click', function () {
+      var idx = card.getAttribute('data-project-id');
+      openCardModal(idx);
     });
-
-    // Keyboard: Enter/Space on cards
-    document.addEventListener('keydown', (e) => {
+    card.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') {
-        const card = e.target.closest('[data-stack-card]');
-        if (card) {
-          e.preventDefault();
-          const idx = parseInt(card.getAttribute('data-stack-card'), 10);
-          openModal(idx);
-        }
+        e.preventDefault();
+        var idx = card.getAttribute('data-project-id');
+        openCardModal(idx);
       }
     });
+  });
 
-    closeBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeModal();
-    });
+  /* ==========================================================================
+     11. Skill Modal
+     ========================================================================== */
+  var skillModal = document.getElementById('skillModal');
+  var skillModalClose = document.getElementById('skillModalClose');
+  var skillModalBody = document.getElementById('skillModalBody');
+  var skillDefsEl = document.getElementById('skill-definitions-json');
+  var skillMapEl = document.getElementById('skill-project-map-json');
+  var SKILL_DEFS = {};
+  var SKILL_MAP = {};
+  try { SKILL_DEFS = JSON.parse(skillDefsEl.textContent); } catch (e) {}
+  try { SKILL_MAP = JSON.parse(skillMapEl.textContent); } catch (e) {}
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && overlay.classList.contains('active')) closeModal();
-    });
-
-    // Focus trap
-    document.addEventListener('keydown', (e) => {
-      if (e.key !== 'Tab' || !overlay.classList.contains('active')) return;
-      const focusable = overlay.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    });
-
-    function escapeHtml(str) {
-      if (typeof str !== 'string') return String(str);
-      const div = document.createElement('div');
-      div.appendChild(document.createTextNode(str));
-      return div.innerHTML;
+  function openSkillModal(skillName) {
+    if (!skillModal || !skillModalBody) return;
+    var def = SKILL_DEFS[skillName] || 'No details available.';
+    var projects = SKILL_MAP[skillName] || [];
+    var html = '<h2>' + skillName + '</h2>' +
+      '<p>' + def + '</p>';
+    if (projects.length) {
+      html += '<h4>Used in:</h4><ul class="skill-projects-list">';
+      projects.forEach(function (p) { html += '<li>' + p + '</li>'; });
+      html += '</ul>';
     }
+    skillModalBody.innerHTML = html;
+    skillModal.classList.add('active');
+    skillModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
   }
 
-  /* ── 10. Scroll Reveals (GSAP) — excludes hero section ──────────────── */
-  function initScrollReveals() {
-    // Only reveal elements NOT inside hero
-    const hero = document.getElementById('hero');
-    const allReveals = document.querySelectorAll('[data-reveal]');
-    
-    const nonHeroReveals = [];
-    allReveals.forEach(el => {
-      if (!hero || !hero.contains(el)) {
-        nonHeroReveals.push(el);
-      }
-    });
+  function closeSkillModal() {
+    if (!skillModal) return;
+    skillModal.classList.remove('active');
+    skillModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
 
-    nonHeroReveals.forEach(el => {
-      const delay = parseFloat(el.getAttribute('data-reveal-delay')) || 0;
-      
-      gsap.fromTo(el, 
-        { y: 40, opacity: 0 },
+  if (skillModalClose) {
+    skillModalClose.addEventListener('click', closeSkillModal);
+  }
+  if (skillModal) {
+    skillModal.addEventListener('click', function (e) { if (e.target === skillModal) closeSkillModal(); });
+  }
+
+  var skillButtons = document.querySelectorAll('.skill-card');
+  skillButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var skill = btn.getAttribute('data-skill');
+      openSkillModal(skill);
+    });
+  });
+
+  /* ==========================================================================
+     12. Magnetic Buttons
+     ========================================================================== */
+  if (!reducedMotion) {
+    var magneticBtns = document.querySelectorAll('.magnetic-btn');
+    magneticBtns.forEach(function (btn) {
+      var strength = parseFloat(btn.getAttribute('data-strength')) || 0.3;
+      btn.addEventListener('mousemove', function (e) {
+        var rect = btn.getBoundingClientRect();
+        var x = e.clientX - rect.left - rect.width / 2;
+        var y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = 'translate(' + (x * strength) + 'px, ' + (y * strength) + 'px)';
+      });
+      btn.addEventListener('mouseleave', function () {
+        btn.style.transform = '';
+      });
+    });
+  }
+
+  /* ==========================================================================
+     13. Hero Char Animation (GSAP text split fallback)
+     ========================================================================== */
+  if (!reducedMotion && typeof gsap !== 'undefined') {
+    var heroName = document.getElementById('heroName');
+    if (heroName && !heroName.querySelector('.hero-char')) {
+      var text = heroName.textContent || '';
+      heroName.innerHTML = '';
+      text.split('').forEach(function (char) {
+        var span = document.createElement('span');
+        span.className = 'hero-char';
+        span.textContent = char === ' ' ? '\u00A0' : char;
+        heroName.appendChild(span);
+      });
+
+      gsap.fromTo('.hero-char',
+        { y: 60, opacity: 0, rotateX: -40 },
         {
-          y: 0,
-          opacity: 1,
-          duration: 0.8,
-          delay: delay,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 85%',
-            toggleActions: 'play none none none',
-          },
+          y: 0, opacity: 1, rotateX: 0, duration: 0.6, stagger: 0.03, ease: 'back.out(1.6)',
+          scrollTrigger: { trigger: heroName, start: 'top 88%' },
         }
       );
-    });
+    }
   }
 
-  /* ── 11. Metric Counters (GSAP) ───────────────────────────────────────── */
-  function initMetricCounters() {
-    const counters = document.querySelectorAll('.impact-value[data-target]');
-    counters.forEach(counter => {
-      const target = parseInt(counter.getAttribute('data-target'), 10);
-      const suffix = counter.getAttribute('data-suffix') || '';
-      if (isNaN(target)) return;
-
-      counter.textContent = '0' + suffix;
-      counter.style.opacity = '1';
-      counter.style.transform = 'none';
-
-      ScrollTrigger.create({
-        trigger: counter,
-        start: 'top 90%',
-        onEnter: () => {
-          gsap.to(counter, {
-            duration: 1.5,
-            ease: 'power3.out',
-            onUpdate: function() {
-              const val = Math.floor(this.progress() * target);
-              counter.textContent = val + suffix;
-            },
-            onComplete: () => {
-              counter.textContent = target + suffix;
-            },
-          });
-        },
-        once: true,
-      });
-    });
-  }
-
-  /* ── 12. Scroll Spy ────────────────────────────────────────────────────── */
-  function initScrollSpy() {
-    const sections = document.querySelectorAll('section[id]');
-    const navLinks = document.querySelectorAll('.navbar-links a');
-    if (!sections.length || !navLinks.length) return;
-
-    ScrollTrigger.create({
-      onUpdate: () => {
-        const scrollPos = window.scrollY || window.pageYOffset;
-        let current = sections[0];
-        sections.forEach(s => {
-          const top = s.offsetTop - 120;
-          const bottom = top + s.offsetHeight;
-          if (scrollPos >= top && scrollPos < bottom) current = s;
-        });
-        navLinks.forEach(link => {
-          const href = link.getAttribute('href');
-          link.classList.toggle('active', href === '#' + current.id);
-        });
-      },
-    });
-  }
-
-  /* ── 13. Smooth Scroll via Lenis ──────────────────────────────────────── */
-  function initSmoothScroll() {
-    document.addEventListener('click', (e) => {
-      const link = e.target.closest('a[href^="#"]');
-      if (!link) return;
-      const targetId = link.getAttribute('href');
-      if (!targetId || targetId === '#') return;
-      e.preventDefault();
-      const target = document.querySelector(targetId);
-      if (!target) return;
-      if (lenis) {
-        lenis.scrollTo(target, { 
-          offset: -80, 
-          duration: 1.2, 
-          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) 
-        });
-      }
-    });
-  }
-
-  /* ── 14. Navbar Scroll Effect ──────────────────────────────────────────── */
-  function initNavbar() {
-    const navbar = document.querySelector('.navbar');
-    if (!navbar) return;
-    ScrollTrigger.create({
-      start: 'top -60',
-      onUpdate: (self) => {
-        if (self.progress > 0) {
-          navbar.style.transform = 'translateX(-50%) scale(0.96)';
-          navbar.style.background = 'rgba(15, 15, 16, 0.85)';
-        } else {
-          navbar.style.transform = 'translateX(-50%) scale(1)';
-          navbar.style.background = 'var(--glass-bg)';
-        }
-      },
-    });
-  }
-
-  /* ── Initialise All ───────────────────────────────────────────────────── */
-  function init() {
-    // First: make all content visible immediately to prevent flash
-    document.querySelectorAll('[data-reveal]').forEach(el => {
-      el.style.opacity = '1';
-      el.style.transform = 'none';
-    });
-    document.querySelectorAll('.stack-card').forEach(el => {
-      el.style.opacity = '1';
-      el.style.transform = 'none';
-    });
-    document.querySelectorAll('.impact-value').forEach(el => {
-      el.style.opacity = '1';
-      el.style.transform = 'none';
-    });
-
-    // Initialize all modules
-    initLenis();
-    initCustomCursor();
-    initParticles();
-    initSpotlight();
-    initMagneticButtons();
-    initScrollProgress();
-    initCardModal();
-
-    // Reset impact values
-    document.querySelectorAll('.impact-value[data-target]').forEach(el => {
-      const target = parseInt(el.getAttribute('data-target'), 10);
-      if (!isNaN(target)) {
-        el.textContent = '0' + (el.getAttribute('data-suffix') || '');
-      }
-    });
-
-    // Run animations
-    initHeroAnimation();
-    initStackedCards();
-    initScrollReveals();
-    initMetricCounters();
-    initScrollSpy();
-    initNavbar();
-    initSmoothScroll();
-
-    ScrollTrigger.refresh();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
 })();
