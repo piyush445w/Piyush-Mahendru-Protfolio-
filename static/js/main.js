@@ -470,10 +470,15 @@
       children.forEach(function (node) {
         var isAccent = node.nodeType === 1 && node.classList.contains('accent');
         var text = node.textContent || '';
-        text.split('').forEach(function (char) {
+      text.split('').forEach(function (char) {
           var span = document.createElement('span');
           span.className = 'hero-char' + (isAccent ? ' accent' : '');
-          span.textContent = char === ' ' ? ' ' : char;
+          if (char === ' ') {
+            span.innerHTML = '&nbsp;';
+            span.style.width = '0.3em';
+          } else {
+            span.textContent = char;
+          }
           heroName.appendChild(span);
         });
       });
