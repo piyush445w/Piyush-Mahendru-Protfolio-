@@ -398,6 +398,12 @@ section {
   line-height: 1.05;
   margin-bottom: var(--space-12);
   letter-spacing: -0.03em;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.hero-char {
+  display: inline;
 }
 
 .hero-name .accent {

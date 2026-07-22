@@ -464,13 +464,18 @@
   if (!reducedMotion && typeof gsap !== 'undefined') {
     var heroName = document.getElementById('heroName');
     if (heroName && !heroName.querySelector('.hero-char')) {
-      var text = heroName.textContent || '';
+      // Walk child nodes preserving .accent class info, using regular spaces for wrapping
+      var children = Array.from(heroName.childNodes);
       heroName.innerHTML = '';
-      text.split('').forEach(function (char) {
-        var span = document.createElement('span');
-        span.className = 'hero-char';
-        span.textContent = char === ' ' ? '\u00A0' : char;
-        heroName.appendChild(span);
+      children.forEach(function (node) {
+        var isAccent = node.nodeType === 1 && node.classList.contains('accent');
+        var text = node.textContent || '';
+        text.split('').forEach(function (char) {
+          var span = document.createElement('span');
+          span.className = 'hero-char' + (isAccent ? ' accent' : '');
+          span.textContent = char === ' ' ? ' ' : char;
+          heroName.appendChild(span);
+        });
       });
 
       gsap.fromTo('.hero-char',
