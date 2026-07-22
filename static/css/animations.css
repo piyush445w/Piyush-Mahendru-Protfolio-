@@ -9,9 +9,6 @@
  * hero content invisible before GSAP loads, causing a flash of hidden content.
  * GSAP sets initial states programmatically in main.js after libraries load.
  */
-[data-reveal] {
-  /* Initial state managed by GSAP via fromTo() */
-}
 
 [data-reveal].revealed {
   opacity: 1;
